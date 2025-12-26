@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Book Shop Management</title>
+
+    <!-- Bootstrap CSS -->
+    <link
+        href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+        rel="stylesheet"
+    >
+</head>
+<body class="bg-light">
+
+<div class="container mt-5">
+    <h2 class="text-center mb-4">📚 Book Shop Management System</h2>
+
+    <!-- Create / Update Book Form -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <h5 id="formTitle">Add Book</h5>
+
+            <input type="hidden" id="bookId">
+
+            <div class="row g-2">
+                <div class="col">
+                    <input class="form-control" id="name" placeholder="Book Name">
+                </div>
+                <div class="col">
+                    <input class="form-control" id="author" placeholder="Author">
+                </div>
+                <div class="col">
+                    <input class="form-control" id="pages" type="number" placeholder="Pages">
+                </div>
+                <div class="col">
+                    <input class="form-control" id="price" type="number" step="0.01" placeholder="Price">
+                </div>
+                <div class="col">
+                    <button class="btn btn-primary w-100" onclick="saveBook()">Save</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Books Table -->
+    <table class="table table-bordered text-center">
+        <thead class="table-dark">
+            <tr>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Author</th>
+                <th>Pages</th>
+                <th>Price</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="booksTable"></tbody>
+    </table>
+</div>
+
+<script>
+const API_URL = "http://127.0.0.1:8000/books";
+
+// Load all books
+async function loadBooks() {
+    const response = await fetch(API_URL);
+    const books = await response.json();
+
+    const table = document.getElementById("booksTable");
+    table.innerHTML = "";
+
+    books.forEach(book => {
+        table.innerHTML += `
+            <tr>
+                <td>${book.id}</td>
+                <td>${book.name}</td>
+                <td>${book.author}</td>
+                <td>${book.pages}</td>
+                <td>${book.price}</td>
+                <td>
+                    <button class="btn btn-warning btn-sm" onclick='editBook(${JSON.stringify(book)})'>Edit</button>
+                    <button class="btn btn-danger btn-sm" onclick="deleteBook(${book.id})">Delete</button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
+// Create or Update book
+async function saveBook() {
+    const id = document.getElementById("bookId").value;
+
+    const book = {
+        name: document.getElementById("name").value,
+        author: document.getElementById("author").value,
+        pages: parseInt(document.getElementById("pages").value),
+        price: parseFloat(document.getElementById("price").value)
+    };
+
+    if (id) {
+        await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(book)
+        });
+    } else {
+        await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(book)
+        });
+    }
+
+    clearForm();
+    loadBooks();
+}
+
+// Edit book
+function editBook(book) {
+    document.getElementById("bookId").value = book.id;
+    document.getElementById("name").value = book.name;
+    document.getElementById("author").value = book.author;
+    document.getElementById("pages").value = book.pages;
+    document.getElementById("price").value = book.price;
+
+    document.getElementById("formTitle").innerText = "Update Book";
+
+    // ✅ Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+// Delete book
+async function deleteBook(id) {
+    await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+    clearForm();
+    loadBooks();
+}
+
+// Clear form
+function clearForm() {
+    document.getElementById("bookId").value = "";
+    document.getElementById("name").value = "";
+    document.getElementById("author").value = "";
+    document.getElementById("pages").value = "";
+    document.getElementById("price").value = "";
+
+    document.getElementById("formTitle").innerText = "Add Book";
+}
+
+// Load books on page load
+loadBooks();
+</script>
+
+</body>
+</html>
